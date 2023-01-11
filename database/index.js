@@ -1,15 +1,18 @@
 import mongoose from 'mongoose'
+mongoose.set('strictQuery', true)
+let numOfRetries = 5
 const connectDB = async () => {
   try {
     await mongoose.connect(
       `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}`
     )
-    console.log('========================MongoDB Connected====================')
+    console.log("DB Connected!")
   } catch (err) {
-    console.log(
-      '========================Error connecting to mongodb========================',
-      err
-    )
+    if (numOfRetries === 0) process.exit()
+    setTimeout(async () => {
+      numOfRetries--
+      await connectDB()
+    }, 5000)
   }
 }
 

@@ -8,4 +8,12 @@ const hashPassword = async (password) => {
   }
 }
 
-export default { hashPassword }
+const comparePassword = async (password, hashedPassword) => {
+  try {
+    return await bcrypt.compare(password, hashedPassword)
+  } catch (err) {
+    throw new APIError(err)
+  }
+}
+
+export default { hashPassword, comparePassword }

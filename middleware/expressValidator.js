@@ -2,7 +2,7 @@ import expressValidator from 'express-validator'
 import { ValidationError } from '../utils/custom-errors.js'
 const { check, validationResult } = expressValidator
 
-const sendEmailValidation = check('email')
+const emailRegistrationValidation = check('email')
   .isEmail()
   .withMessage('Invalid Email')
 
@@ -22,7 +22,20 @@ const verifyEmail = [
     ),
 ]
 
-const validation = (req, res, next) => {
+const loginByEmail = [
+  check('email').isEmail().withMessage('Invalid Email'),
+  check('password', 'Password lenght must be greater than 8')
+    .notEmpty()
+    .isLength({ min: 8, max: 64 })
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,64}$/
+    )
+    .withMessage(
+      'Password must be 8 to 64 characters, contain 1 upper, 1 lower, 1 numberic and a special character'
+    ),
+]
+
+const validation = (req, _res, next) => {
   const error = validationResult(req)
   if (!error.isEmpty()) {
     throw new ValidationError(
@@ -32,4 +45,4 @@ const validation = (req, res, next) => {
   next()
 }
 
-export { sendEmailValidation, validation, verifyEmail }
+export { emailRegistrationValidation, validation, verifyEmail, loginByEmail }

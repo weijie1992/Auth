@@ -1,4 +1,3 @@
-import mongoose from 'mongoose'
 import User from '../model/User.js'
 
 const findOne = async (email) => {

@@ -1,18 +1,21 @@
+import express from 'express'
+const app = express()
+import cors from 'cors'
 import * as dotenv from 'dotenv'
-//DOT ENV
+//DOT ENV and CORS
 if (process.env.NODE_ENV !== 'PROD') {
+  app.use(cors())
   dotenv.config({ path: './.env' })
 } else {
   dotenv.config()
 }
-import express from 'express'
+
 import connectDB from './database/index.js'
 import authRouter from './routers/auth-secure-router.js'
 import bodyParser from 'body-parser'
 
 await connectDB()
 
-const app = express()
 app.use(bodyParser.json())
 
 app.use('/auth', authRouter)

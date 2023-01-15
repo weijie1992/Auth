@@ -1,5 +1,5 @@
 import authService from '../services/auth-service.js'
-const sendEmail = async (req, res, next) => {
+const emailRegistration = async (req, res, next) => {
   try {
     const results = await authService.constructJWTandSendEmail(req.body.email)
     return res.json(results)
@@ -21,4 +21,14 @@ const verifyEmailRegistration = async (req, res, next) => {
     next(err)
   }
 }
-export default { sendEmail, verifyEmailRegistration }
+
+const loginByEmail = async (req, res, next) => {
+  try {
+    const { email, password } = req.body
+    const results = await authService.verifyLogin(email, password)
+    return res.json(results)
+  } catch (err) {
+    next(err)
+  }
+}
+export default { emailRegistration, verifyEmailRegistration, loginByEmail }

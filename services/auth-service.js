@@ -46,4 +46,29 @@ const createUserWithPassword = async (username, password, token) => {
   }
 }
 
-export default { constructJWTandSendEmail, createUserWithPassword }
+const verifyLogin = async (email, password) => {
+  if (!email || !password) {
+    throw new ValidationError('Email or Password was not provided')
+  }
+  try {
+    const user = await userRepository.findOne(email)
+    if (!user) {
+      throw new ValidationError('User not exist, please register')
+    }
+    const hashedPassword = user.password
+    const res = await passwordHelper.comparePassword(password, hashedPassword)
+    if (!res) {
+      throw new ValidationError('Email and Password dont match')
+    }
+    const token = jwt.sign({ email }, process.env.JWT_LOGIN, {
+      expiresIn: process.env.JWT_LOGIN_TOKEN_EXPIRY_TIME,
+    })
+    return {
+      success: true,
+      token,
+    }
+  } catch (err) {
+    errorHelper(err)
+  }
+}
+export default { constructJWTandSendEmail, createUserWithPassword, verifyLogin }

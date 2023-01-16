@@ -1,11 +1,14 @@
 import jwt from 'jsonwebtoken'
 import passwordHelper from '../helper/password-helper.js'
-import { ValidationError } from '../utils/custom-errors.js'
+import { UncaughtError, ValidationError } from '../utils/custom-errors.js'
 import errorHelper from '../helper/error-helper.js'
 import emailHelper from '../helper/email-helper.js'
 import userRepository from '../database/repository/user-repository.js'
 
-const constructJWTandSendEmail = async (email) => {
+const constructJWTandSendEmail = async (fullName, email, password) => {
+  if (!fullName || !email || !password) {
+    throw new ValidationError('Please fill in all fields')
+  }
   try {
     const user = await userRepository.findOne(email)
     if (user) {
@@ -14,10 +17,33 @@ const constructJWTandSendEmail = async (email) => {
     const token = jwt.sign({ email }, process.env.JWT_REGISTER, {
       expiresIn: process.env.JWT_REGISTER_TOKEN_EXPIRY_TIME,
     })
-    const sendEmailResults = await emailHelper.sendEmail(email, token)
+    await emailHelper.sendEmail(email, token)
+    const hashedPassword = await passwordHelper.hashPassword(password)
+    const results = await userRepository.save({
+      fullName,
+      email,
+      password: hashedPassword,
+    })
+    if (results && results.email === email) {
+      return {
+        success: true,
+        token,
+      }
+    }
+    throw new UncaughtError('Something went wrong please contact administrator')
+  } catch (err) {
+    errorHelper(err)
+  }
+}
+
+const activateEmail = async (email) => {
+  try {
+    const results = await userRepository.activateEmail(email)
+    if (!results) {
+      throw new ValidationError('User not found, Please try to register again')
+    }
     return {
-      success: sendEmailResults,
-      token,
+      success: true,
     }
   } catch (err) {
     errorHelper(err)
@@ -71,4 +97,9 @@ const verifyLogin = async (email, password) => {
     errorHelper(err)
   }
 }
-export default { constructJWTandSendEmail, createUserWithPassword, verifyLogin }
+export default {
+  constructJWTandSendEmail,
+  activateEmail,
+  createUserWithPassword,
+  verifyLogin,
+}

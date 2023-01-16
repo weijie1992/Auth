@@ -2,15 +2,12 @@ import expressValidator from 'express-validator'
 import { ValidationError } from '../utils/custom-errors.js'
 const { check, validationResult } = expressValidator
 
-const emailRegistrationValidation = check('email')
-  .isEmail()
-  .withMessage('Invalid Email')
-
-const verifyEmail = [
-  check('username')
+const emailRegistrationValidation = [
+  check('fullName')
     .notEmpty()
     .isLength({ min: 2, max: 64 })
     .withMessage('Username must be between 2 to 64 characters'),
+  check('email').isEmail().withMessage('Invalid Email'),
   check('password', 'Password lenght must be greater than 8')
     .notEmpty()
     .isLength({ min: 8, max: 64 })
@@ -45,4 +42,4 @@ const validation = (req, _res, next) => {
   next()
 }
 
-export { emailRegistrationValidation, validation, verifyEmail, loginByEmail }
+export { emailRegistrationValidation, validation, loginByEmail }

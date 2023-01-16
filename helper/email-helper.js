@@ -19,7 +19,7 @@ const sendEmail = async (email, token) => {
     text: `http://localhost:3000?token=${token}`,
     html: `
               <h1>Click the URL below to activate your Fruittier Account</h1>
-              <p>This activate URL only last for 10mins</p>
+              <p>This activate URL only last for 7days</p>
               <p>http://localhost/user/activate/${token}</p>
                   `,
   }

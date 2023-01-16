@@ -2,9 +2,9 @@ import express from 'express'
 import {
   emailRegistrationValidation,
   validation,
-  verifyEmail,
   loginByEmail,
 } from '../middleware/expressValidator.js'
+import { verifyJwt } from '../middleware/auth.js'
 import auth from '../express-handlers/auth.js'
 
 const router = express.Router()
@@ -15,12 +15,7 @@ router.post(
   validation,
   auth.emailRegistration
 )
-router.post(
-  '/verifyEmail',
-  verifyEmail,
-  validation,
-  auth.verifyEmailRegistration
-)
+router.post('/activateEmail', verifyJwt, auth.activateEmail)
 
 router.post('/login', loginByEmail, validation, auth.loginByEmail)
 

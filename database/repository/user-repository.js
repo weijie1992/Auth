@@ -9,4 +9,10 @@ const save = async (user) => {
   return await saveUser.save()
 }
 
-export default { findOne, save }
+const activateEmail = async (email) => {
+  return await User.findOneAndUpdate(
+    { email },
+    { activated: true, activatedTime: new Date() }
+  )
+}
+export default { findOne, save, activateEmail }

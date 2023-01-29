@@ -4,13 +4,7 @@ let numOfRetries = 5
 const connectDB = async () => {
   try {
     await mongoose.connect(
-      `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}`,
-      {
-        useNewUrlParser: true,
-        useCreateIndex: true,
-        useFindAndModify: false,
-        useUnifiedTopology: true,
-      }
+      `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}`
     )
     console.log('DB Connected!')
   } catch (err) {

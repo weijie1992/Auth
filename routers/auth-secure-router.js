@@ -4,7 +4,6 @@ import {
   validation,
   loginByEmail,
 } from '../middleware/expressValidator.js'
-import { verifyJwt } from '../middleware/auth.js'
 import auth from '../express-handlers/auth.js'
 
 const router = express.Router()

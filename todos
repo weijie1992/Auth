@@ -1,5 +1,8 @@
-1)activate email
+1)activate  - done
 1) Mongoose validation for fields like email password, required still will not throw error
 2) logger to a place watch https://www.youtube.com/watch?v=FYjvLLCRDXE&list=PLaLqLOj2bk9ZV2RhqXzABUP5QSg42uJEs&index=8
 3) reseach cors for production
 4)checkout domain for sendgrid need to understand
+5) logger like company have a unique index like using session id
+6) session id combine with JWT
+7) need to setup redis to invalid jwt token

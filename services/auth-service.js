@@ -36,8 +36,9 @@ const constructJWTandSendEmail = async (fullName, email, password) => {
   }
 }
 
-const activateEmail = async (email) => {
+const activateEmail = async (token) => {
   try {
+    const { email } = jwt.verify(token, process.env.JWT_REGISTER)
     const results = await userRepository.activateEmail(email)
     if (!results) {
       throw new ValidationError('User not found, Please try to register again')

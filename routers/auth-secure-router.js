@@ -15,7 +15,7 @@ router.post(
   validation,
   auth.emailRegistration
 )
-router.post('/activateEmail', verifyJwt, auth.activateEmail)
+router.post('/activateEmail', auth.activateEmail)
 
 router.post('/login', loginByEmail, validation, auth.loginByEmail)
 

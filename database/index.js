@@ -4,9 +4,15 @@ let numOfRetries = 5
 const connectDB = async () => {
   try {
     await mongoose.connect(
-      `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}`
+      `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}`,
+      {
+        useNewUrlParser: true,
+        useCreateIndex: true,
+        useFindAndModify: false,
+        useUnifiedTopology: true,
+      }
     )
-    console.log("DB Connected!")
+    console.log('DB Connected!')
   } catch (err) {
     if (numOfRetries === 0) process.exit()
     setTimeout(async () => {

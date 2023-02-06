@@ -1,6 +1,6 @@
 import sgMail from '@sendgrid/mail'
 import * as dotenv from 'dotenv'
-import { APIError } from '../utils/custom-errors.js'
+import { UncaughtError } from '../utils/custom-errors.js'
 
 //DOT ENV
 if (process.env.NODE_ENV !== 'PROD') {
@@ -27,7 +27,7 @@ const sendEmail = async (email, token) => {
     await sgMail.send(msg)
     return true
   } catch (err) {
-    throw new APIError(err)
+    throw new UncaughtError(err)
   }
 }
 export default { sendEmail }

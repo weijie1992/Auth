@@ -1,3 +1,4 @@
+import constant from '../constant/constant.js'
 import authService from '../services/auth-service.js'
 const emailRegistration = async (req, res, next) => {
   try {
@@ -14,7 +15,6 @@ const emailRegistration = async (req, res, next) => {
 }
 
 const activateEmail = async (req, res, next) => {
-  //todo activate email check JWT token expiry, set to 7 days when email link was clicked
   try {
     const token = req.body.token
     const results = await authService.activateEmail(token)
@@ -33,4 +33,28 @@ const loginByEmail = async (req, res, next) => {
     next(err)
   }
 }
-export default { emailRegistration, activateEmail, loginByEmail }
+
+const userAuthCheck = async (req, res, next) => {
+  try {
+    const results = await authService.routeCheck(req)
+    return res.json(results)
+  } catch (err) {
+    next(err)
+  }
+}
+
+const adminAuthCheck = async (req, res, next) => {
+  try {
+    const results = await authService.routeCheckAdmin(req, constant.ADMIN)
+    return res.json(results)
+  } catch (err) {
+    next(err)
+  }
+}
+export default {
+  emailRegistration,
+  activateEmail,
+  loginByEmail,
+  userAuthCheck,
+  adminAuthCheck,
+}

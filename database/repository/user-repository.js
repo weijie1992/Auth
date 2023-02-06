@@ -1,5 +1,8 @@
 import User from '../model/User.js'
 
+const findById = async (id) => {
+  return await User.findById(id)
+}
 const findOne = async (email) => {
   return await User.findOne({ email })
 }
@@ -15,4 +18,4 @@ const activateEmail = async (email) => {
     { activated: true, activatedTime: new Date() }
   )
 }
-export default { findOne, save, activateEmail }
+export default { findById, findOne, save, activateEmail }

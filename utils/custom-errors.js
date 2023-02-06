@@ -1,10 +1,11 @@
 const STATUS_CODES = {
   OK: 200,
   BAD_REQUEST: 400,
-  UN_AUTHORISED: 403,
+  UN_AUTHORISED: 401,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
-  INTERNAL_ERROR: 500,
-  UNCAUGHT_ERROR: 503,
+  INTERNAL_SERVER: 500,
+  UNCAUGHT: 503,
 }
 
 class BaseError extends Error {
@@ -21,45 +22,52 @@ class BaseError extends Error {
 }
 
 //500 internal uncaught error
-class UncaughtError extends Error {
-  constructor(description = 'uncaught error') {
-    super(description)
-    this.name = 'Uncaught Errors'
-    this.statusCode = STATUS_CODES.UNCAUGHT_ERROR
+class UncaughtError extends BaseError {
+  constructor(description) {
+    super('uncaught error', STATUS_CODES.UNCAUGHT, description)
   }
 }
 //500 internal error
-class APIError extends BaseError {
-  constructor(description = 'api error') {
-    super('api internal server error', STATUS_CODES.INTERNAL_ERROR, description)
+class InternalServerError extends BaseError {
+  constructor(description) {
+    super('internal server error', STATUS_CODES.INTERNAL_SERVER, description)
   }
 }
 //400 bad request
-class ValidationError extends BaseError {
-  constructor(description = 'bad request') {
+class BadRequest extends BaseError {
+  constructor(description) {
     super('bad request', STATUS_CODES.BAD_REQUEST, description)
   }
 }
 
+// 401 Authorize error
+class UnAuthorizeError extends BaseError {
+  constructor(description) {
+    console.log("🚀 ~ file: custom-errors.js:46 ~ UnAuthorizeError ~ constructor ~ description", description)
+    super('unauthorized', STATUS_CODES.UN_AUTHORISED, description)
+  }
+}
+
 // 403 Authorize error
-class AuthorizeError extends BaseError {
-  constructor(description = 'access denied') {
-    super('access denied', STATUS_CODES.UN_AUTHORISED, description)
+class ForbiddenError extends BaseError {
+  constructor(description) {
+    super('forbidden', STATUS_CODES.FORBIDDEN, description)
   }
 }
 
 //404
 class NotFoundError extends BaseError {
-  constructor(description = 'not found') {
-    super('not found', STATUS_CODES.INTERNAL_ERROR, description)
+  constructor(description) {
+    super('not found', STATUS_CODES.NOT_FOUND, description)
   }
 }
 
 export {
   BaseError,
   UncaughtError,
-  APIError,
-  ValidationError,
-  AuthorizeError,
+  InternalServerError,
+  BadRequest,
+  UnAuthorizeError,
+  ForbiddenError,
   NotFoundError,
 }

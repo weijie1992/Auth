@@ -1,5 +1,5 @@
 import expressValidator from 'express-validator'
-import { ValidationError } from '../utils/custom-errors.js'
+import { BadRequest } from '../utils/custom-errors.js'
 const { check, validationResult } = expressValidator
 
 const emailRegistrationValidation = [
@@ -21,7 +21,7 @@ const emailRegistrationValidation = [
 
 const loginByEmail = [
   check('email').isEmail().withMessage('Invalid Email'),
-  check('password', 'Password lenght must be greater than 8')
+  check('password', 'Password length must be greater than 8')
     .notEmpty()
     .isLength({ min: 8, max: 64 })
     .matches(
@@ -35,7 +35,7 @@ const loginByEmail = [
 const validation = (req, _res, next) => {
   const error = validationResult(req)
   if (!error.isEmpty()) {
-    throw new ValidationError(
+    throw new BadRequest(
       (error.errors && error.errors[0].msg) || 'MUST BE A VALID EMAIL'
     )
   }

@@ -17,6 +17,7 @@ const verifyLoginToken = (req, res, next) => {
     req.email = decoded.email
     next()
   } catch (err) {
+    console.log("🚀 ~ file: auth.js:20 ~ verifyLoginToken ~ err", err)
     errorHelper(err)
   }
 }

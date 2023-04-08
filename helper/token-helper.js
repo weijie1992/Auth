@@ -45,6 +45,11 @@ const generateJwe = async (jwsPayload, jwsSecret, signOptions) => {
 }
 
 const verifyJwe = async (jweToken, jwsSecret) => {
+  console.log('🚀 ~ file: token-helper.js:48 ~ verifyJwe ~ jweToken:', jweToken)
+  console.log(
+    "🚀 ~ file: token-helper.js:50 ~ verifyJwe ~ jweToken === 'undefined':",
+    jweToken === 'undefined'
+  )
   if (jweToken === 'undefined') {
     new UnAuthorizeError('JWE Token not provided')
   }
@@ -52,6 +57,7 @@ const verifyJwe = async (jweToken, jwsSecret) => {
   //2) decrypt the JWE payload
   //3) verify the JWS token
   try {
+    const jwePrivateKey = await jose.JWK.asKey(process.env.JWE_PRIVATE_KEY, 'pem')
     const decryptedJWE = await jose.JWE.createDecrypt(jwePrivateKey).decrypt(
       jweToken
     )
@@ -59,6 +65,7 @@ const verifyJwe = async (jweToken, jwsSecret) => {
     const verifiedPayload = jwt.verify(plaintextToStr, jwsSecret)
     return verifiedPayload
   } catch (err) {
+    console.log('🚀 ~ file: token-helper.js:63 ~ verifyJwe ~ err:', err)
     throw new UnAuthorizeError(err)
   }
 }

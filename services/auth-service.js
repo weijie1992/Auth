@@ -1,4 +1,3 @@
-import jwt from 'jsonwebtoken'
 import passwordHelper from '../helper/password-helper.js'
 import {
   UnAuthorizeError,
@@ -9,8 +8,10 @@ import {
 import errorHelper from '../helper/error-helper.js'
 import emailHelper from '../helper/email-helper.js'
 import userRepository from '../database/repository/user-repository.js'
+import tokenHelper from '../helper/token-helper.js'
+import constant from '../constant/constant.js'
 
-const constructJWTandSendEmail = async (fullName, email, password) => {
+const constructJWTandSendEmail = async ({ fullName, email, password }, res) => {
   if (!fullName || !email || !password) {
     throw new BadRequest('Please fill in all fields')
   }
@@ -19,22 +20,41 @@ const constructJWTandSendEmail = async (fullName, email, password) => {
     if (user) {
       throw new BadRequest('User already has an account')
     }
-    const loginToken = jwt.sign({ email }, process.env.JWT_LOGIN, {
-      expiresIn: process.env.JWT_LOGIN_TOKEN_EXPIRY_TIME,
+
+    const loginToken = await tokenHelper.generateJwe(
+      { email },
+      process.env.LOGIN_HS256_SECRET,
+      {
+        expiresIn: process.env.JWT_LOGIN_TOKEN_EXPIRY_TIME,
+        algorithm: process.env.JWT_SIGN_ALGORITHM,
+      }
+    )
+
+    res.cookie(constant.LOGIN_TOKEN, loginToken, {
+      // httpOnly: process.env.COOKIES_HTTPONLY,
+      sameSite: process.env.COOKIES_SAMESITE,
+      domain: process.env.COOKIES_DOMAIN,
+      path: process.env.COOKIES_PATH,
+      secure: false,
+      expires: new Date(Date.now() + parseInt(process.env.COOKIE_EXPIRES)),
     })
 
     const hashedPassword = await passwordHelper.hashPassword(password)
-
     const results = await userRepository.save({
       fullName,
       email,
       password: hashedPassword,
     })
 
-    const token = jwt.sign({ email }, process.env.JWT_REGISTER, {
-      expiresIn: process.env.JWT_REGISTER_TOKEN_EXPIRY_TIME,
-    })
-    await emailHelper.sendEmail(email, token)
+    const emailToken = await tokenHelper.generateJwe(
+      { email },
+      process.env.REGISTER_HS256_SECRET,
+      {
+        expiresIn: '7d',
+        algorithm: process.env.JWT_SIGN_ALGORITHM,
+      }
+    )
+    await emailHelper.sendEmail(email, emailToken)
 
     if (results && results.email === email) {
       return {
@@ -54,7 +74,10 @@ const activateEmail = async (token) => {
     throw new UnAuthorizeError('Token Not Found')
   }
   try {
-    const { email } = jwt.verify(token, process.env.JWT_REGISTER)
+    const { email } = await tokenHelper.verifyJwe(
+      token,
+      process.env.REGISTER_HS256_SECRET
+    )
     const results = await userRepository.activateEmail(email)
     if (!results) {
       throw new BadRequest('User not found, please register')
@@ -67,7 +90,7 @@ const activateEmail = async (token) => {
   }
 }
 
-const verifyLogin = async (email, password) => {
+const verifyLogin = async ({ email, password }, res) => {
   if (!email || !password) {
     throw new BadRequest('Email or Password was not provided')
   }
@@ -77,20 +100,36 @@ const verifyLogin = async (email, password) => {
       throw new BadRequest('User not exist, please register')
     }
     const hashedPassword = user.password
-    const res = await passwordHelper.comparePassword(password, hashedPassword)
-    if (!res) {
+    const results = await passwordHelper.comparePassword(
+      password,
+      hashedPassword
+    )
+    if (!results) {
       throw new BadRequest('Email and Password dont match')
     }
-    const token = jwt.sign(
+
+    const loginToken = await tokenHelper.generateJwe(
       { _id: user._id, email, role: user.role },
-      process.env.JWT_LOGIN,
+      process.env.LOGIN_HS256_SECRET,
       {
         expiresIn: process.env.JWT_LOGIN_TOKEN_EXPIRY_TIME,
+        algorithm: process.env.JWT_SIGN_ALGORITHM,
       }
     )
+
+    res.cookie(constant.LOGIN_TOKEN, loginToken, {
+      // httpOnly: process.env.COOKIES_HTTPONLY,
+      sameSite: process.env.COOKIES_SAMESITE,
+      domain: process.env.COOKIES_DOMAIN,
+      path: process.env.COOKIES_PATH,
+      secure: false,
+      expires: new Date(Date.now() + parseInt(process.env.COOKIE_EXPIRES)),
+    })
+   
+
     return {
       success: true,
-      token,
+      token: loginToken,
       redirect: user.role,
     }
   } catch (err) {
@@ -124,7 +163,7 @@ const routeCheck = async (req) => {
 const routeCheckAdmin = async (req, role) => {
   try {
     let user
-
+    
     if (req._id) {
       user = await userRepository.findById(req.userId)
     } else {

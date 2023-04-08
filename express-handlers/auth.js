@@ -4,9 +4,8 @@ const emailRegistration = async (req, res, next) => {
   try {
     const { fullName, email, password } = req.body
     const results = await authService.constructJWTandSendEmail(
-      fullName,
-      email,
-      password
+      { fullName, email, password },
+      res
     )
     return res.json(results)
   } catch (err) {
@@ -27,7 +26,7 @@ const activateEmail = async (req, res, next) => {
 const loginByEmail = async (req, res, next) => {
   try {
     const { email, password } = req.body
-    const results = await authService.verifyLogin(email, password)
+    const results = await authService.verifyLogin({ email, password }, res)
     return res.json(results)
   } catch (err) {
     next(err)

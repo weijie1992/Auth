@@ -1,3 +1,5 @@
+import https from 'https'
+import fs from 'fs'
 import express from 'express'
 const app = express()
 import cors from 'cors'
@@ -42,6 +44,14 @@ app.use((err, _req, res, _next) => {
   return res.status(statusCode).json(data)
 })
 
-app.listen(3000, () => {
-  console.log('Auth Api running on port 3000')
+// app.listen(3000, () => {
+//   console.log('Auth Api running on port 3000')
+// })
+
+const options = {
+  key: fs.readFileSync('./httpsKeysAndCerts/key.pem'),
+  cert: fs.readFileSync('./httpsKeysAndCerts/cert.pem'),
+}
+https.createServer(options, app).listen(443, () => {
+  console.log('Server running on port 443')
 })

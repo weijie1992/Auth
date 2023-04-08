@@ -5,7 +5,6 @@ import {
 } from '../utils/custom-errors.js'
 
 export default (err) => {
-  console.log('🚀 ~ file: error-helper.js:4 ~ err', JSON.stringify(err))
   if (err instanceof BaseError) {
     throw err
   } else if (

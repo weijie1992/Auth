@@ -1,8 +1,7 @@
-import jwt from 'jsonwebtoken'
 import { UnAuthorizeError } from '../utils/custom-errors.js'
-import errorHelper from '../helper/error-helper.js'
+import tokenHelper from '../helper/token-helper.js'
 
-const verifyLoginToken = (req, res, next) => {
+const verifyLoginToken = async (req, res, next) => {
   const authHeader = req.header('Authorization')
   if (!authHeader) {
     throw new UnAuthorizeError('User not authorized')
@@ -12,13 +11,15 @@ const verifyLoginToken = (req, res, next) => {
     throw new UnAuthorizeError('User not authorized')
   }
   try {
-    const decoded = jwt.verify(token, process.env.JWT_LOGIN)
+    const decoded = await tokenHelper.verifyJwe(
+      token,
+      process.env.LOGIN_HS256_SECRET
+    )
     req.userId = decoded._id
     req.email = decoded.email
     next()
   } catch (err) {
-    console.log("🚀 ~ file: auth.js:20 ~ verifyLoginToken ~ err", err)
-    errorHelper(err)
+    next(err)
   }
 }
 

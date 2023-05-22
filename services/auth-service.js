@@ -10,7 +10,12 @@ import emailHelper from '../helper/email-helper.js'
 import userRepository from '../database/repository/user-repository.js'
 import tokenHelper from '../helper/token-helper.js'
 import constant from '../constant/constant.js'
+import { redisClient } from '../redis/index.js'
+import { nanoid } from 'nanoid'
 
+export const sum = (a, b) => {
+  return a+b
+}
 const constructJWTandSendEmail = async ({ fullName, email, password }, res) => {
   if (!fullName || !email || !password) {
     throw new BadRequest('Please fill in all fields')
@@ -108,8 +113,20 @@ const verifyLogin = async ({ email, password }, res) => {
       throw new BadRequest('Email and Password dont match')
     }
 
+    const sessionid = nanoid()
+    redisClient.setex(
+      constant.REDIS_KEY_IAM_SESSION + email,
+      process.env.SESSION_EXPIRY_TIME,
+      sessionid
+    )
+
     const loginToken = await tokenHelper.generateJwe(
-      { _id: user._id, email, role: user.role },
+      {
+        _id: user._id,
+        email,
+        role: user.role,
+        sessionid,
+      },
       process.env.LOGIN_HS256_SECRET,
       {
         expiresIn: process.env.JWT_LOGIN_TOKEN_EXPIRY_TIME,
@@ -125,7 +142,6 @@ const verifyLogin = async ({ email, password }, res) => {
       secure: false,
       expires: new Date(Date.now() + parseInt(process.env.COOKIE_EXPIRES)),
     })
-   
 
     return {
       success: true,
@@ -162,26 +178,172 @@ const routeCheck = async (req) => {
 
 const routeCheckAdmin = async (req, role) => {
   try {
-    let user
-    
-    if (req._id) {
-      user = await userRepository.findById(req.userId)
-    } else {
-      user = await userRepository.findOne(req.email)
+    const { userId, email } = req
+
+    const user = await _checkUserExistInDb({ userId, email })
+    if (user.role !== role) {
+      throw new ForbiddenError('Access to page denied')
     }
-    if (!user || !user.email || !user.role) {
-      throw new UnAuthorizeError('User not found')
+    return {
+      success: true,
+      redirect: user.role,
     }
-    if (user.email === req.email && user.role === role) {
-      return {
-        success: true,
-        redirect: user.role,
-      }
-    }
-    throw new ForbiddenError('Access to page denied')
+
+    // if (!email || !sessionid) {
+    //   throw new UnAuthorizeError('User Session not found, Please Relogin')
+    // }
+
+    // if (!(await redisClient.get(constant.REDIS_KEY_IAM_SESSION + email))) {
+    //   throw new UnAuthorizeError('Session Expired. Please Relogin')
+    // }
+    // if (
+    //   (await redisClient.get(constant.REDIS_KEY_IAM_SESSION + email)) !==
+    //   sessionid
+    // ) {
+    //   throw new UnAuthorizeError('Concurrent Session Detected. Please Relogin')
+    // }
+
+    // let user
+
+    // if (userId) {
+    //   user = await userRepository.findById(userId)
+    // } else {
+    //   user = await userRepository.findOne(email)
+    // }
+
+    // if (!user || !user.email || !user.role) {
+    //   throw new UnAuthorizeError('User not found')
+    // }
+
+    // if (user.email === req.email && user.role === role) {
+    //   return {
+    //     success: true,
+    //     redirect: user.role,
+    //   }
+    // }
+
+    // throw new ForbiddenError('Access to page denied')
   } catch (err) {
     errorHelper(err)
   }
+}
+const logout = async (req, res) => {
+  // throw new UnAuthorizeError('User Session not found, Please Relogin')
+  const { email, sessionid } = req
+  console.log('🚀 ~ file: auth-service.js:215 ~ logout ~ sessionid:', sessionid)
+  console.log('🚀 ~ file: auth-service.js:215 ~ logout ~ email:', email)
+  if (!email || !sessionid) {
+    throw new UnAuthorizeError('User Session not found, Please Relogin')
+  }
+  try {
+    if (
+      (await redisClient.get(constant.REDIS_KEY_IAM_SESSION + email)) ===
+      sessionid
+    ) {
+      await redisClient.del(constant.REDIS_KEY_IAM_SESSION + email)
+      return {
+        success: true,
+      }
+    }
+    throw new UnAuthorizeError('User Session not found, logout failed')
+  } catch (err) {
+    errorHelper(err)
+  } finally {
+    res.clearCookie('login_token')
+  }
+}
+
+const checkLogin = async (req, res) => {
+  try {
+    const { userId, email } = req
+    const user = await _checkUserExistInDb({ userId, email })
+    console.log('🚀 ~ file: auth-service.js:248 ~ checkLogin ~ user:', user)
+    //if token expiring, renew here
+    const expireDatetime = new Date(req.exp * 1000)
+    console.log(
+      '🚀 ~ file: auth-service.js:251 ~ checkLogin ~ expireDatetime:',
+      expireDatetime
+    )
+    const now = new Date()
+    console.log('🚀 ~ file: auth-service.js:253 ~ checkLogin ~ now:', now)
+    const diffInMinutes = Math.floor((expireDatetime - now) / (1000 * 60))
+    console.log(
+      '🚀 ~ file: auth-service.js:255 ~ checkLogin ~ diffInMinutes:',
+      diffInMinutes
+    )
+    if (diffInMinutes <= process.env.TIME_TO_RENEW_JWT_IN_MINUTES) {
+      await redisClient.del(constant.REDIS_KEY_IAM_SESSION + email)
+
+      const newSessionId = nanoid()
+      redisClient.setex(
+        constant.REDIS_KEY_IAM_SESSION + email,
+        process.env.SESSION_EXPIRY_TIME,
+        newSessionId
+      )
+      const newLoginToken = await tokenHelper.generateJwe(
+        {
+          _id: user._id,
+          email,
+          role: user.role,
+          sessionid: newSessionId,
+        },
+        process.env.LOGIN_HS256_SECRET,
+        {
+          expiresIn: process.env.JWT_LOGIN_TOKEN_EXPIRY_TIME,
+          algorithm: process.env.JWT_SIGN_ALGORITHM,
+        }
+      )
+      console.log(
+        '🚀 ~ file: auth-service.js:278 ~ checkLogin ~ newLoginToken:',
+        newLoginToken
+      )
+
+      res.cookie(constant.LOGIN_TOKEN, newLoginToken, {
+        // httpOnly: process.env.COOKIES_HTTPONLY,
+        sameSite: process.env.COOKIES_SAMESITE,
+        domain: process.env.COOKIES_DOMAIN,
+        path: process.env.COOKIES_PATH,
+        secure: false,
+        expires: new Date(Date.now() + parseInt(process.env.COOKIE_EXPIRES)),
+      })
+
+      return {
+        success: true,
+        token: newLoginToken,
+      }
+    }
+
+    return {
+      success: true,
+    }
+  } catch (err) {
+    console.log('🚀 ~ file: auth-service.js:255 ~ checkLogin ~ err:', err)
+    errorHelper(err)
+  }
+}
+
+const _checkUserExistInDb = async ({ userId, email }) => {
+  let user
+  if (userId) {
+    user = await userRepository.findById(userId)
+  } else {
+    user = await userRepository.findOne(email)
+  }
+
+  _isValidUser({ user, email })
+  return user
+}
+
+const _isValidUser = ({ user, email }) => {
+  if (!user || !user.email || !user.role) {
+    throw new UnAuthorizeError('User not found')
+  }
+  if (user.email !== email) {
+    throw new UnAuthorizeError(
+      'Something is wrong with user, please contact admin'
+    )
+  }
+  return
 }
 
 export default {
@@ -190,4 +352,6 @@ export default {
   verifyLogin,
   routeCheck,
   routeCheckAdmin,
+  logout,
+  checkLogin,
 }

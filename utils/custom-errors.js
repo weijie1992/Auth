@@ -10,12 +10,40 @@ const STATUS_CODES = {
 
 class BaseError extends Error {
   constructor(name, statusCode, description) {
+    console.log(
+      '🚀 ~ file: custom-errors.js:13 ~ BaseError ~ constructor ~ description:',
+      description
+    )
+    console.log(
+      '🚀 ~ file: custom-errors.js:13 ~ BaseError ~ constructor ~ statusCode:',
+      statusCode
+    )
+    console.log(
+      '🚀 ~ file: custom-errors.js:13 ~ BaseError ~ constructor ~ name:',
+      name
+    )
     //calls Error class and pass in the description
     super(description)
     //Dont think this line is needed later try removing
     Object.setPrototypeOf(this, new.target.prototype)
     this.name = name
     this.statusCode = statusCode
+    console.log(
+      '🚀 ~ file: custom-errors.js:22 ~ BaseError ~ constructor ~ this:',
+      this
+    )
+    console.log(
+      '🚀 ~ file: custom-errors.js:22 ~ BaseError ~ constructor ~ this:Keys',
+      Object.keys(this)
+    )
+    console.log(
+      '🚀 ~ file: custom-errors.js:22 ~ BaseError ~ constructor ~ this:',
+      typeof this
+    )
+    console.log(
+      '🚀 ~ file: custom-errors.js:22 ~ BaseError ~ constructor ~ this:',
+      JSON.stringify(this)
+    )
     //return Strings that represents the location of the particular error in the call.
     Error.captureStackTrace(this)
   }
@@ -43,7 +71,10 @@ class BadRequest extends BaseError {
 // 401 Authorize error
 class UnAuthorizeError extends BaseError {
   constructor(description) {
-    console.log("🚀 ~ file: custom-errors.js:46 ~ UnAuthorizeError ~ constructor ~ description", description)
+    console.log(
+      '🚀 ~ file: custom-errors.js:46 ~ UnAuthorizeError ~ constructor ~ description',
+      description
+    )
     super('unauthorized', STATUS_CODES.UN_AUTHORISED, description)
   }
 }

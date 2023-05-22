@@ -21,13 +21,16 @@ if (process.env.NODE_ENV !== 'PROD') {
 } else {
   dotenv.config()
 }
+
 app.use(helmet())
 app.use(cookieParser())
 import connectDB from './database/index.js'
+import initRedis from './redis/index.js'
 import authRouter from './routers/auth-secure-router.js'
 import bodyParser from 'body-parser'
 
 await connectDB()
+await initRedis()
 
 app.use(bodyParser.json())
 

@@ -57,7 +57,10 @@ const verifyJwe = async (jweToken, jwsSecret) => {
   //2) decrypt the JWE payload
   //3) verify the JWS token
   try {
-    const jwePrivateKey = await jose.JWK.asKey(process.env.JWE_PRIVATE_KEY, 'pem')
+    const jwePrivateKey = await jose.JWK.asKey(
+      process.env.JWE_PRIVATE_KEY,
+      'pem'
+    )
     const decryptedJWE = await jose.JWE.createDecrypt(jwePrivateKey).decrypt(
       jweToken
     )

@@ -19,8 +19,12 @@ router.post('/activateEmail', auth.activateEmail)
 
 router.post('/login', loginByEmail, validation, auth.loginByEmail)
 
+router.post('/logout', verifyLoginToken, auth.logout)
+
 router.get('/userAuthCheck', verifyLoginToken, auth.userAuthCheck)
 
 router.get('/adminAuthCheck', verifyLoginToken, auth.adminAuthCheck)
+
+router.post('/tryLogin', verifyLoginToken, auth.checkLogin)
 
 export default router

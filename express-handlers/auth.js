@@ -50,10 +50,33 @@ const adminAuthCheck = async (req, res, next) => {
     next(err)
   }
 }
+
+const logout = async (req, res, next) => {
+  try {
+    const results = await authService.logout(req, res)
+    console.log('🚀 ~ file: auth.js:57 ~ logout ~ results:', results)
+    return res.json(results)
+  } catch (err) {
+    console.log('🚀 ~ file: auth.js:60 ~ logout ~ err:', err)
+    next(err)
+  }
+}
+const checkLogin = async (req, res, next) => {
+  try {
+    const results = await authService.checkLogin(req, res)
+    console.log("🚀 ~ file: auth.js:67 ~ checkLogin ~ results:", results)
+    return res.json(results)
+  } catch (err) {
+    next(err)
+  }
+}
+
 export default {
   emailRegistration,
   activateEmail,
   loginByEmail,
   userAuthCheck,
   adminAuthCheck,
+  logout,
+  checkLogin,
 }
